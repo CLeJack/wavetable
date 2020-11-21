@@ -5,13 +5,16 @@ Created on Thu Nov 19 15:35:05 2020
 @author: cjack
 """
 
-import scipy.io.wavfile as wavfile
+#import scipy.io.wavfile as wavfile
+import soundfile as sf
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 import math
 from scipy import interpolate
 import random
+
+random.seed(314)
 
 class Data():
     
@@ -36,7 +39,7 @@ def wav_data(inpath = "input", srate = 44100):
     files = [os.path.join(inpath, file) for file in files]
     
     #0 ind is wavfile srate 1 ind is signal
-    signals = [wavfile.read(file)[1] for file in files]
+    signals = [sf.read(file)[0] for file in files]
     
     temp = []
     
@@ -51,7 +54,7 @@ def wav_data(inpath = "input", srate = 44100):
     
     return data
 
-def get_window(targetblock, center = 0.5, width = .25):
+def get_window(targetblock, center = 0.5, width = .33):
     X = targetblock
     mu = targetblock * center
     sigma = targetblock * width
@@ -61,10 +64,26 @@ def get_window(targetblock, center = 0.5, width = .25):
     
     return window
 
-def create_wavetable(data, name = 'wavetable', targetblock = 2048, srate = 44100, limit = 256):
+def sigmoid_window(targetblock, bounds = 10, pct = .10):
+    size = int(targetblock * pct *0.5)
+    x = np.linspace(-bounds, bounds, size*2)
+    lsegment = 1/(1 + np.exp(-x))
+    lsegment = lsegment - np.min(lsegment)
+    lsegment = lsegment /np.max(lsegment)
+    rsegment = np.flip(lsegment)
+    
+    window = np.ones(targetblock)
+    window[:size * 2] = lsegment
+    window[targetblock - size * 2: targetblock] = rsegment
+    
+    return window
+
+def create_wavetable(data, name = 'wavetable', targetblock = 2048, 
+                     srate = 44100, limit = 256, vol = 29204):
     
     table = []
-    window = get_window(targetblock)
+    #window = get_window(targetblock)
+    window = sigmoid_window(targetblock)
     
         
         
@@ -80,7 +99,14 @@ def create_wavetable(data, name = 'wavetable', targetblock = 2048, srate = 44100
             y = signal[start:end]
             f = interpolate.interp1d(x,y)
             newblock = f(np.arange(0,targetblock))
+            
+            #approximately -1 decibel maximization
+            newblock = newblock * vol / np.max(np.abs(newblock))
+            
             newblock = newblock * window
+            
+            
+            
             
             table.append(newblock)
     
@@ -93,7 +119,7 @@ def create_wavetable(data, name = 'wavetable', targetblock = 2048, srate = 44100
     
     output = table[selection].flatten().astype(np.int16)
     
-    wavfile.write(name+'.wav', srate, output)
+    sf.write(name+'.wav', output, srate,)
     
     
     return output
