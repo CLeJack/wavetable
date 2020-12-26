@@ -7,7 +7,6 @@ Created on Thu Nov 19 15:35:05 2020
 
 import scipy.io.wavfile as wavfile
 import numpy as np
-import matplotlib.pyplot as plt
 import os
 import math
 from scipy import interpolate
