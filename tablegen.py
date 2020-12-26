@@ -234,7 +234,11 @@ def single_cycle_table(data, name = 'wavetable', targetblock = 2048,
         
         
         f = interpolate.interp1d(x, y, fill_value = 0)
-        newblock = f(f_in) * window
+        
+        #newblock = f(f_in) * window
+        
+        #disabling windowing
+        newblock = f(f_in)
         newblock = newblock * vol / np.max(np.abs(newblock))
         t_interps.append( newblock )
     
@@ -273,6 +277,7 @@ def run_sc(name = 'wavetable', srate = 44100, targetblock = 2048, limit = 256):
     data = single_cycle_data()
     table = single_cycle_table(data, name, targetblock, srate, limit)
     
+# It's easier to just use built in wavetable imports.
 def run_tv(name = 'wavetable', srate = 44100, targetblock = 2048, limit = 256):
     data = time_variant_data()
     table = time_variant_table(data, name, targetblock, srate, limit)
@@ -290,4 +295,7 @@ def run_sc_bulk(rootfolder, subpath = 'k', srate = 44100, targetblock = 2048, li
                 table = single_cycle_table(data, folder, targetblock, limit)
             except Exception as e:
                 print('error occured \n')
+                
+if __name__ == '__main__':
+    run_sc()
                 
